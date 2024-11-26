@@ -55,15 +55,38 @@ void RepeatEvent::tick(EventLoop* event_loop) {
   xSemaphoreGiveRecursive(event_loop->timed_queue_mutex_);
 }
 
+void PauseableRepeatEvent::pause(void) { this->paused = true; }
+void PauseableRepeatEvent::restart(void) {
+  this->paused = false;
+  this->last_trigger_time = micros64();
+}
+void PauseableRepeatEvent::resume(void) { this->paused = false; }
+boolean PauseableRepeatEvent::isPaused(void) { return this->paused; }
+
+void PauseableRepeatEvent::tick(EventLoop* event_loop) {
+  xSemaphoreTakeRecursive(event_loop->timed_queue_mutex_, portMAX_DELAY);
+  if (!this->paused) {
+    auto now = micros64();
+    this->last_trigger_time = this->last_trigger_time + this->interval;
+    if (this->last_trigger_time + this->interval < now) {
+      // we're lagging more than one full interval; reset the time
+      this->last_trigger_time = now;
+    }
+    this->callback();
+  } else {
+    event_loop->timed_event_counter -= 1;
+  }
+  event_loop->timed_queue.push(this);
+  xSemaphoreGiveRecursive(event_loop->timed_queue_mutex_);
+}
+
 void UntimedEvent::add(EventLoop* event_loop) {
   xSemaphoreTakeRecursive(event_loop->untimed_list_mutex_, portMAX_DELAY);
   event_loop->untimed_list.push_back(this);
   xSemaphoreGiveRecursive(event_loop->untimed_list_mutex_);
 }
 
-void UntimedEvent::remove(EventLoop* event_loop) {
-  event_loop->remove(this);
-}
+void UntimedEvent::remove(EventLoop* event_loop) { event_loop->remove(this); }
 
 void StreamEvent::tick(EventLoop* event_loop) {
   if (0 != stream.available()) {
@@ -93,8 +116,6 @@ void ISREvent::add(EventLoop* event_loop) {
   xSemaphoreGiveRecursive(event_loop->isr_event_list_mutex_);
 }
 
-void ISREvent::remove(EventLoop* event_loop) {
-  event_loop->remove(this);
-}
+void ISREvent::remove(EventLoop* event_loop) { event_loop->remove(this); }
 
 }  // namespace reactesp

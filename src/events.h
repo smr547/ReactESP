@@ -173,6 +173,46 @@ class RepeatEvent : public TimedEvent {
 };
 
 /**
+ * @brief Event that is triggered repeatedly but
+ * can be paused, resumed or restarted from time to time
+ */
+class PauseableRepeatEvent : public RepeatEvent {
+
+  private:
+  boolean paused;
+
+ public:
+  /**
+   * @brief Construct a new Pauseable Repeat Event object
+   *
+   * @param interval Repetition interval, in milliseconds
+   * @param callback Function to be called at every repetition
+   */
+  PauseableRepeatEvent(uint32_t interval, react_callback callback)
+      : RepeatEvent(interval, callback) {
+        paused = false;
+      }
+  /**
+   * @brief Construct a new Pauseable Repeat Event object
+   *
+   * @param interval Repetition interval, in microseconds
+   * @param callback Function to be called at every repetition
+   */
+  PauseableRepeatEvent(uint64_t interval, react_callback callback)
+      : RepeatEvent(interval, callback) {
+        paused = false;
+      }
+
+
+  void pause(void);
+  void restart(void);
+  void resume(void);
+  boolean isPaused(void);
+
+  void tick(EventLoop* event_loop) override;
+};
+
+/**
  * @brief Events that are triggered based on something else than time
  */
 class UntimedEvent : public Event {

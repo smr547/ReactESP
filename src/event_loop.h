@@ -16,14 +16,14 @@ class EventLoop {
   friend class TimedEvent;
   friend class RepeatEvent;
   friend class UntimedEvent;
+  friend class PauseableRepeatEvent;
   friend class ISREvent;
 
  public:
   /**
    * @brief Construct a new EventLoop object.
    */
-  EventLoop()
-      : timed_queue(), untimed_list(), isr_event_list() {
+  EventLoop() : timed_queue(), untimed_list(), isr_event_list() {
     timed_queue_mutex_ = xSemaphoreCreateRecursiveMutex();
     untimed_list_mutex_ = xSemaphoreCreateRecursiveMutex();
     isr_event_list_mutex_ = xSemaphoreCreateRecursiveMutex();
@@ -81,6 +81,16 @@ class EventLoop {
    * @return RepeatEvent*
    */
   RepeatEvent* onRepeat(uint32_t interval, react_callback callback);
+
+  /**
+   * @brief Create a new PauseableRepeatEvent
+   *
+   * @param delay Interval, in milliseconds
+   * @param callback Callback function
+   * @return PauseableRepeatEvent*
+   */
+  PauseableRepeatEvent* onPauseableRepeat(uint32_t interval,
+                                          react_callback callback);
   /**
    * @brief Create a new RepeatEvent
    *
@@ -89,6 +99,17 @@ class EventLoop {
    * @return RepeatEvent*
    */
   RepeatEvent* onRepeatMicros(uint64_t interval, react_callback callback);
+
+  /**
+   * @brief Create a new PauseableRepeatEvent
+   *
+   * @param delay Interval, in microseconds
+   * @param callback Callback function
+   * @return PauseableRepeatEvent*
+   */
+  PauseableRepeatEvent* onPauseableRepeatMicros(uint64_t interval,
+                                                react_callback callback);
+
   /**
    * @brief Create a new StreamEvent
    *

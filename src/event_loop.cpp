@@ -71,6 +71,20 @@ RepeatEvent* EventLoop::onRepeatMicros(uint64_t interval,
   return rre;
 }
 
+PauseableRepeatEvent* EventLoop::onPauseableRepeat(uint32_t interval,
+                                                   react_callback callback) {
+  auto* rre = new PauseableRepeatEvent(interval, callback);
+  rre->add(this);
+  return rre;
+}
+
+PauseableRepeatEvent* EventLoop::onPauseableRepeatMicros(
+    uint64_t interval, react_callback callback) {
+  auto* rre = new PauseableRepeatEvent(interval, callback);
+  rre->add(this);
+  return rre;
+}
+
 StreamEvent* EventLoop::onAvailable(Stream& stream, react_callback callback) {
   auto* sre = new StreamEvent(stream, callback);
   sre->add(this);
@@ -94,7 +108,8 @@ void EventLoop::remove(TimedEvent* event) { event->remove(this); }
 
 void EventLoop::remove(UntimedEvent* event) {
   xSemaphoreTakeRecursive(this->untimed_list_mutex_, portMAX_DELAY);
-  auto it = std::find(this->untimed_list.begin(), this->untimed_list.end(), event);
+  auto it =
+      std::find(this->untimed_list.begin(), this->untimed_list.end(), event);
   if (it != this->untimed_list.end()) {
     this->untimed_list.erase(it);
   }
@@ -103,7 +118,8 @@ void EventLoop::remove(UntimedEvent* event) {
 }
 void EventLoop::remove(ISREvent* event) {
   xSemaphoreTakeRecursive(this->isr_event_list_mutex_, portMAX_DELAY);
-  auto it = std::find(this->isr_event_list.begin(), this->isr_event_list.end(), event);
+  auto it = std::find(this->isr_event_list.begin(), this->isr_event_list.end(),
+                      event);
   if (it != this->isr_event_list.end()) {
     this->isr_event_list.erase(it);
   }
