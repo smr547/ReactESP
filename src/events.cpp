@@ -65,16 +65,16 @@ boolean PauseableRepeatEvent::isPaused(void) { return this->paused; }
 
 void PauseableRepeatEvent::tick(EventLoop* event_loop) {
   xSemaphoreTakeRecursive(event_loop->timed_queue_mutex_, portMAX_DELAY);
-  if (!this->paused) {
-    auto now = micros64();
-    this->last_trigger_time = this->last_trigger_time + this->interval;
-    if (this->last_trigger_time + this->interval < now) {
-      // we're lagging more than one full interval; reset the time
-      this->last_trigger_time = now;
-    }
-    this->callback();
-  } else {
+  auto now = micros64();
+  this->last_trigger_time = this->last_trigger_time + this->interval;
+  if (this->last_trigger_time + this->interval < now) {
+    // we're lagging more than one full interval; reset the time
+    this->last_trigger_time = now;
+  }
+  if (this->paused) {
     event_loop->timed_event_counter -= 1;
+  } else {
+    this->callback();
   }
   event_loop->timed_queue.push(this);
   xSemaphoreGiveRecursive(event_loop->timed_queue_mutex_);
